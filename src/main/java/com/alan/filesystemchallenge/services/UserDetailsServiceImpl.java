@@ -1,5 +1,6 @@
 package com.alan.filesystemchallenge.services;
 
+import com.alan.filesystemchallenge.exceptions.UserNotFoundException;
 import com.alan.filesystemchallenge.repositories.UsersRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -26,13 +26,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		var optionalUser = this.usersRepository.findByUsername(username);
-		if(optionalUser.isEmpty()) {
-			var message = "Username not found";
-			logger.error(message);
-			throw new UsernameNotFoundException(message);
-		}
-		return new User(optionalUser.get().getUsername(), optionalUser.get().getPassword(), Collections.emptyList());
+		logger.info("Finding user with username {}...", username);
+		var user = this.usersRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
+
+		logger.info("User found");
+		return new User(user.getUsername(), user.getPassword(), Collections.emptyList());
 	}
 
 }

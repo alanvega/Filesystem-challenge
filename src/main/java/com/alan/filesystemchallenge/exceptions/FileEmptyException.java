@@ -1,5 +1,9 @@
 package com.alan.filesystemchallenge.exceptions;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
 public class FileEmptyException extends CustomException {
 	public FileEmptyException() {
 		super("File is empty");

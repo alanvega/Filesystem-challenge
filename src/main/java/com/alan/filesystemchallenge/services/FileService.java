@@ -84,7 +84,6 @@ public class FileService {
 		return this.fileTransformer.transformFileResponse(file);
 	}
 
-	// this auth maybe should be on a filter or interceptor and the user should be stored on the MDC (then get it here)
 	public void shareFile(FileShareRequest fileShareRequest) {
 		logger.info("Sharing file with id {} to username {}",
 				fileShareRequest.getFileId(),
@@ -121,19 +120,18 @@ public class FileService {
 		this.fileShareRepository.save(fileShare);
 	}
 
+	// this auth maybe should be on a filter or interceptor and the user should be stored on the MDC (then get it here)
 	private Long validateAuthAndGetUserId() {
 		logger.info("Getting user authentication");
 		var authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication != null && authentication.isAuthenticated()) {
 			logger.info("User is authenticated, finding user and getting user id (if exists)");
 			var username = authentication.getName();
-			var user = this.usersRepository.findByUsername(username);
-
-			if (user.isEmpty()) throw new UserNotFoundException();
+			var user = this.usersRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
 
 			// in a real project it is not a good idea to log the username with the id
-			logger.info("User {} with id {} is authenticated", username, user.get().getId());
-			return user.get().getId();
+			logger.info("User {} with id {} is authenticated", username, user.getId());
+			return user.getId();
 		} else {
 			throw new UserNotAuthenticatedException();
 		}

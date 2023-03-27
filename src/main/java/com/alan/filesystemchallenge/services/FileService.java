@@ -7,6 +7,7 @@ import com.alan.filesystemchallenge.exceptions.UserNotAuthenticatedException;
 import com.alan.filesystemchallenge.exceptions.UserNotFoundException;
 import com.alan.filesystemchallenge.models.builders.FileBuilder;
 import com.alan.filesystemchallenge.models.builders.FileShareBuilder;
+import com.alan.filesystemchallenge.models.entities.FileShare;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
 import com.alan.filesystemchallenge.models.requests.FileShareRequest;
 import com.alan.filesystemchallenge.models.responses.FileResponse;
@@ -89,17 +90,20 @@ public class FileService {
 				fileShareRequest.getFileId(),
 				fileShareRequest.getUsernameToShare());
 
-		logger.info("Finding if file exists...");
-		this.filesRepository.findById(fileShareRequest.getFileId()).orElseThrow(FileNotFoundException::new);
-
 		logger.info("File exists, getting user and validating if user exists...");
 		var userId = this.validateAuthAndGetUserId();
 
+		logger.info("Finding if file exists...");
+		var file = this.filesRepository.findById(fileShareRequest.getFileId()).orElseThrow(FileNotFoundException::new);
+
 		// I'm assuming that only the owner can share the file
 		logger.info("Checking if user is the file owner...");
-		var fileShareInfo = this.fileShareRepository
-				.findById(fileShareRequest.getFileId())
-				.orElseThrow(FileNotFoundException::new);
+		var fileShareInfo = file
+				.getFileShareInfo()
+				.stream()
+				.filter(FileShare::isOwner)
+				.findFirst()
+				.orElseThrow(UserIsNotTheFileOwnerException::new);
 
 		if(!fileShareInfo.getUserId().equals(userId) || !fileShareInfo.isOwner()) {
 			throw new UserIsNotTheFileOwnerException();
@@ -117,6 +121,7 @@ public class FileService {
 				.withIsOwner(false)
 				.build();
 
+		logger.info("Saving file share...");
 		this.fileShareRepository.save(fileShare);
 	}
 

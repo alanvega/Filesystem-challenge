@@ -4,7 +4,7 @@ import com.alan.filesystemchallenge.models.entities.FileShare;
 
 public class FileShareBuilder {
 
-	private Integer userId;
+	private Long userId;
 	private Boolean isOwner;
 	private Long fileId;
 
@@ -12,7 +12,7 @@ public class FileShareBuilder {
 		return new FileShareBuilder();
 	}
 
-	public FileShareBuilder withUserId(Integer user) {
+	public FileShareBuilder withUserId(Long user) {
 		this.userId = user;
 		return this;
 	}

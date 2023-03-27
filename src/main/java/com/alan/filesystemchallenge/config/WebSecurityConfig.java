@@ -26,12 +26,10 @@ public class WebSecurityConfig {
 		http.authorizeHttpRequests(requests -> {
 							try {
 								requests
-												// TODO this /file/upload should be secured
-												.requestMatchers(HttpMethod.POST, "/user/create", "/file/upload").permitAll()
-//												.requestMatchers("/login.html", "/login",  "/home", "/error").permitAll()
-												.requestMatchers("/error").permitAll()
-												.anyRequest().authenticated()
-												.and().csrf().disable(); // TODO: this should be removed
+										.requestMatchers("/error").permitAll()
+										.requestMatchers(HttpMethod.POST, "/user/create").permitAll()
+										.anyRequest().authenticated()
+										.and().csrf().disable(); // TODO: this should be removed
 							} catch (Exception e) {
 								throw new RuntimeException(e);
 							}

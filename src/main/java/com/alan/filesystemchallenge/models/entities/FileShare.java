@@ -14,7 +14,7 @@ public class FileShare {
 	private Long id;
 
 	@Column(name = "user_id")
-	private Integer userId;
+	private Long userId;
 	@Column(name = "is_owner")
 	private Boolean isOwner;
 	@Column(name = "file_id")
@@ -29,11 +29,11 @@ public class FileShare {
 		this.id = id;
 	}
 
-	public Integer getUserId() {
+	public Long getUserId() {
 		return userId;
 	}
 
-	public void setUserId(Integer userId) {
+	public void setUserId(Long userId) {
 		this.userId = userId;
 	}
 

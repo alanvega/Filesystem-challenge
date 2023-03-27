@@ -1,6 +1,6 @@
 package com.alan.filesystemchallenge.services;
 
-import com.alan.filesystemchallenge.exceptions.UserAlreadyExists;
+import com.alan.filesystemchallenge.exceptions.UserAlreadyExistsException;
 import com.alan.filesystemchallenge.exceptions.UserEmptyException;
 import com.alan.filesystemchallenge.models.builders.UserBuilder;
 import com.alan.filesystemchallenge.models.requests.UserRequest;
@@ -25,12 +25,17 @@ public class UserService {
 	}
 
 	public void create(UserRequest userRequest) {
-		checkEmptyUser(userRequest);
+		// this could be moved to validate service
+		if(userRequest.getUsername().isEmpty() || userRequest.getPassword().isEmpty()) {
+			var message = "Username or password cannot be empty";
+			logger.warn(message);
+			throw new UserEmptyException(message);
+		}
 
 		if(this.usersRepository.findByUsername(userRequest.getUsername()).isPresent()) {
 			var message = "Username already exists";
 			logger.error(message);
-			throw new UserAlreadyExists(message);
+			throw new UserAlreadyExistsException(message);
 		}
 
 		logger.info("Creating user with username {}...", userRequest.getUsername());
@@ -42,13 +47,5 @@ public class UserService {
 
 		this.usersRepository.save(user);
 		logger.info("User created");
-	}
-
-	private void checkEmptyUser(UserRequest userRequest) {
-		if(userRequest.getUsername().isEmpty() || userRequest.getPassword().isEmpty()) {
-			var message = "Username or password cannot be empty";
-			logger.warn(message);
-			throw new UserEmptyException(message);
-		}
 	}
 }

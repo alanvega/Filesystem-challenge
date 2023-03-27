@@ -25,17 +25,14 @@ public class UserService {
 	}
 
 	public void create(UserRequest userRequest) {
-		// this could be moved to validate service
+		// this validations should be moved to a validation service
 		if(userRequest.getUsername().isEmpty() || userRequest.getPassword().isEmpty()) {
-			var message = "Username or password cannot be empty";
-			logger.warn(message);
-			throw new UserEmptyException(message);
+			throw new UserEmptyException();
 		}
 
+		// in a real project, this would be better not to notify the user that the username already exists
 		if(this.usersRepository.findByUsername(userRequest.getUsername()).isPresent()) {
-			var message = "Username already exists";
-			logger.error(message);
-			throw new UserAlreadyExistsException(message);
+			throw new UserAlreadyExistsException();
 		}
 
 		logger.info("Creating user with username {}...", userRequest.getUsername());

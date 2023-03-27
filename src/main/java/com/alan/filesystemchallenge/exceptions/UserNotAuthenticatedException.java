@@ -1,7 +1,7 @@
 package com.alan.filesystemchallenge.exceptions;
 
-public class UserNotAuthenticatedException extends RuntimeException {
-	public UserNotAuthenticatedException(String message) {
-		super(message);
+public class UserNotAuthenticatedException extends CustomException {
+	public UserNotAuthenticatedException() {
+		super("User is not authenticated");
 	}
 }

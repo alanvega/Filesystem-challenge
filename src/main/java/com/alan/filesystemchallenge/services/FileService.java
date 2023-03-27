@@ -1,10 +1,14 @@
 package com.alan.filesystemchallenge.services;
 
+import com.alan.filesystemchallenge.exceptions.FileEmptyException;
+import com.alan.filesystemchallenge.exceptions.FileNotFoundException;
+import com.alan.filesystemchallenge.exceptions.UserIsNotTheFileOwnerException;
 import com.alan.filesystemchallenge.exceptions.UserNotAuthenticatedException;
 import com.alan.filesystemchallenge.exceptions.UserNotFoundException;
 import com.alan.filesystemchallenge.models.builders.FileBuilder;
 import com.alan.filesystemchallenge.models.builders.FileShareBuilder;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
+import com.alan.filesystemchallenge.models.requests.FileShareRequest;
 import com.alan.filesystemchallenge.models.responses.FileResponse;
 import com.alan.filesystemchallenge.repositories.FileShareRepository;
 import com.alan.filesystemchallenge.repositories.FilesRepository;
@@ -41,61 +45,97 @@ public class FileService {
 	public FileResponse uploadFile(FileRequest fileRequest) {
 		var optionalOfUploadedFile = Optional.ofNullable(fileRequest.getFile());
 		if (optionalOfUploadedFile.isEmpty() || optionalOfUploadedFile.get().isEmpty()) {
-			logger.warn("File is empty");
-			return null;
+			throw new FileEmptyException();
 		}
 
-		// this auth should be on a filter or interceptor and the user should be stored on the MDC (then get it here)
+		var userId = this.validateAuthAndGetUserId();
+
+		var uploadedFile = optionalOfUploadedFile.get();
+
+		var name = Optional.of(fileRequest.getName()).orElse(uploadedFile.getOriginalFilename());
+		logger.info("Uploading file with name {}...", name);
+
+		var file = FileBuilder.builder()
+				.withName(name)
+				.withFileContent(uploadedFile)
+				.withCreateDate(new Date())
+				.build();
+
+		var savedFile = this.filesRepository.save(file);
+
+		logger.info("Saving file share for owner...");
+		// default file share for owner
+		var fileShare = FileShareBuilder.builder()
+				.withUserId(userId)
+				.withIsOwner(true)
+				.withFileId(savedFile.getId())
+				.build();
+
+		fileShareRepository.save(fileShare);
+
+		// On a real project maybe it wouldn't be a good idea to log the file id and the user id
+		logger.info("File uploaded with id {}, name {}, and create date {} for user id {}",
+				file.getId(),
+				file.getName(),
+				file.getCreateDate(),
+				userId
+		);
+
+		return this.fileTransformer.transformFileResponse(file);
+	}
+
+	// this auth maybe should be on a filter or interceptor and the user should be stored on the MDC (then get it here)
+	public void shareFile(FileShareRequest fileShareRequest) {
+		logger.info("Sharing file with id {} to username {}",
+				fileShareRequest.getFileId(),
+				fileShareRequest.getUsernameToShare());
+
+		logger.info("Finding if file exists...");
+		this.filesRepository.findById(fileShareRequest.getFileId()).orElseThrow(FileNotFoundException::new);
+
+		logger.info("File exists, getting user and validating if user exists...");
+		var userId = this.validateAuthAndGetUserId();
+
+		// I'm assuming that only the owner can share the file
+		logger.info("Checking if user is the file owner...");
+		var fileShareInfo = this.fileShareRepository
+				.findById(fileShareRequest.getFileId())
+				.orElseThrow(FileNotFoundException::new);
+
+		if(!fileShareInfo.getUserId().equals(userId) || !fileShareInfo.isOwner()) {
+			throw new UserIsNotTheFileOwnerException();
+		}
+
+		logger.info("User is the file owner, finding if user to share exists...");
+		var userToShare = this.usersRepository
+				.findByUsername(fileShareRequest.getUsernameToShare())
+				.orElseThrow(UserNotFoundException::new);
+		logger.info("User to share exists, sharing file to user");
+
+		var fileShare = FileShareBuilder.builder()
+				.withUserId(userToShare.getId())
+				.withFileId(fileShareRequest.getFileId())
+				.withIsOwner(false)
+				.build();
+
+		this.fileShareRepository.save(fileShare);
+	}
+
+	private Long validateAuthAndGetUserId() {
 		logger.info("Getting user authentication");
 		var authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication != null && authentication.isAuthenticated()) {
+			logger.info("User is authenticated, finding user and getting user id (if exists)");
 			var username = authentication.getName();
 			var user = this.usersRepository.findByUsername(username);
 
-			if(user.isEmpty()) {
-				var message = "User not found";
-				logger.error(message);
-				throw new UserNotFoundException(message);
-			}
+			if (user.isEmpty()) throw new UserNotFoundException();
 
-			logger.info("User id {} is authenticated", user.get().getId());
-
-			var uploadedFile = optionalOfUploadedFile.get();
-
-			var name = Optional.of(fileRequest.getName()).orElse(uploadedFile.getOriginalFilename());
-			logger.info("Uploading file with name {}...", name);
-
-			var file = FileBuilder.builder()
-					.withName(name)
-					.withFileContent(uploadedFile)
-					.withCreateDate(new Date())
-					.build();
-
-			var savedFile = this.filesRepository.save(file);
-
-			logger.info("Saving file share for owner...");
-			// default file share for owner
-			var fileShare = FileShareBuilder.builder()
-					.withUserId(user.get().getId())
-					.withIsOwner(true)
-					.withFileId(savedFile.getId())
-					.build();
-
-			fileShareRepository.save(fileShare);
-
-			// On a real project maybe it wouldn't be a good idea to log the file id
-			logger.info("File uploaded with id {}, name {}, and create date {} for user id {}",
-					file.getId(),
-					file.getName(),
-					file.getCreateDate(),
-					user.get().getId()
-			);
-
-			return this.fileTransformer.transformFileResponse(file);
+			// in a real project it is not a good idea to log the username with the id
+			logger.info("User {} with id {} is authenticated", username, user.get().getId());
+			return user.get().getId();
+		} else {
+			throw new UserNotAuthenticatedException();
 		}
-		var message = "User is not authenticated";
-		logger.error(message);
-		throw new UserNotAuthenticatedException(message);
-
 	}
 }

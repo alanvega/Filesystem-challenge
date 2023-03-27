@@ -37,11 +37,11 @@ public class FileShare {
 		this.userId = userId;
 	}
 
-	public Boolean getOwner() {
+	public Boolean isOwner() {
 		return isOwner;
 	}
 
-	public void setOwner(Boolean owner) {
+	public void setIsOwner(Boolean owner) {
 		isOwner = owner;
 	}
 

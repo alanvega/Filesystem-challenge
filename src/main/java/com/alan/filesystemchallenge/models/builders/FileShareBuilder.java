@@ -30,7 +30,7 @@ public class FileShareBuilder {
 	public FileShare build() {
 		var fileShare = new FileShare();
 		fileShare.setUserId(this.userId);
-		fileShare.setOwner(this.isOwner);
+		fileShare.setIsOwner(this.isOwner);
 		fileShare.setFileId(this.fileId);
 		return fileShare;
 	}

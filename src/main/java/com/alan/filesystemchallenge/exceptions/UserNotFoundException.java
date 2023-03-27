@@ -1,7 +1,7 @@
 package com.alan.filesystemchallenge.exceptions;
 
-public class UserNotFoundException extends RuntimeException {
-	public UserNotFoundException(String message) {
-		super(message);
+public class UserNotFoundException extends CustomException {
+	public UserNotFoundException() {
+		super("User not found");
 	}
 }

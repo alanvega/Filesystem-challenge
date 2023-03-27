@@ -1,6 +1,8 @@
 package com.alan.filesystemchallenge.models.requests;
 
-public class UserRequest {
+import java.io.Serializable;
+
+public class UserRequest implements Serializable {
 	private String username;
 	private String password;
 

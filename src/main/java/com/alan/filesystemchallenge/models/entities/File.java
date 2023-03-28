@@ -24,7 +24,6 @@ public class File {
 	private String name;
 
 	@Column(name="file_content")
-//	@Lob
 	private byte[] fileContent;
 
 	@Column(name="create_date")

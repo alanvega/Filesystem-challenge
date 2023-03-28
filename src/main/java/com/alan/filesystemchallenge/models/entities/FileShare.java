@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity(name = "file_share")
 public class FileShare {
@@ -20,6 +22,9 @@ public class FileShare {
 	@Column(name = "file_id")
 	private Long fileId;
 
+	@ManyToOne
+	@JoinColumn(insertable = false, updatable = false)
+	private File file;
 
 	public Long getId() {
 		return id;
@@ -53,4 +58,11 @@ public class FileShare {
 		this.fileId = fileId;
 	}
 
+	public File getFile() {
+		return file;
+	}
+
+	public void setFile(File file) {
+		this.file = file;
+	}
 }

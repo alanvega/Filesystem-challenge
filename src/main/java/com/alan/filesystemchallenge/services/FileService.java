@@ -6,10 +6,12 @@ import com.alan.filesystemchallenge.exceptions.UserIsNotTheFileOwnerException;
 import com.alan.filesystemchallenge.exceptions.UserNotAuthenticatedException;
 import com.alan.filesystemchallenge.exceptions.UserNotFoundException;
 import com.alan.filesystemchallenge.models.builders.FileBuilder;
+import com.alan.filesystemchallenge.models.builders.FileMetadataBuilder;
 import com.alan.filesystemchallenge.models.builders.FileShareBuilder;
 import com.alan.filesystemchallenge.models.entities.FileShare;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
 import com.alan.filesystemchallenge.models.requests.FileShareRequest;
+import com.alan.filesystemchallenge.models.responses.FileMetadataResponse;
 import com.alan.filesystemchallenge.models.responses.FileResponse;
 import com.alan.filesystemchallenge.repositories.FileShareRepository;
 import com.alan.filesystemchallenge.repositories.FilesRepository;
@@ -22,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -90,7 +93,6 @@ public class FileService {
 				fileShareRequest.getFileId(),
 				fileShareRequest.getUsernameToShare());
 
-		logger.info("File exists, getting user and validating if user exists...");
 		var userId = this.validateAuthAndGetUserId();
 
 		logger.info("Finding if file exists...");
@@ -113,21 +115,37 @@ public class FileService {
 		var userToShare = this.usersRepository
 				.findByUsername(fileShareRequest.getUsernameToShare())
 				.orElseThrow(UserNotFoundException::new);
-		logger.info("User to share exists, sharing file to user");
 
+		logger.info("User to share exists, sharing file to user...");
 		var fileShare = FileShareBuilder.builder()
 				.withUserId(userToShare.getId())
 				.withFileId(fileShareRequest.getFileId())
 				.withIsOwner(false)
 				.build();
 
-		logger.info("Saving file share...");
 		this.fileShareRepository.save(fileShare);
+		logger.info("Saved file share...");
+	}
+
+	public List<FileMetadataResponse> getAllFiles() {
+		var userId = this.validateAuthAndGetUserId();
+
+		logger.info("Getting all files for user id {}...", userId);
+		return this.fileShareRepository
+				.findByUserId(userId)
+				.stream()
+				.map(fileShare -> FileMetadataBuilder.builder()
+						.setName(fileShare.getFile().getName())
+						.setFileId(fileShare.getFileId())
+						.setIsOwner(fileShare.isOwner())
+						.setCreatedDate(fileShare.getFile().getCreateDate())
+						.build()
+				).toList();
 	}
 
 	// this auth maybe should be on a filter or interceptor and the user should be stored on the MDC (then get it here)
 	private Long validateAuthAndGetUserId() {
-		logger.info("Getting user authentication");
+		logger.info("Getting user authentication and validating if user exists...");
 		var authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication != null && authentication.isAuthenticated()) {
 			logger.info("User is authenticated, finding user and getting user id (if exists)");

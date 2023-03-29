@@ -1,8 +1,9 @@
 package com.alan.filesystemchallenge.models.responses;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class FileMetadataResponse {
+public class FileMetadataResponse implements Serializable {
 	private Long fileId;
 	private String name;
 	private Date createdDate;

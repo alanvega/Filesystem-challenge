@@ -1,7 +1,9 @@
 package com.alan.filesystemchallenge.services;
 
 import com.alan.filesystemchallenge.exceptions.FileEmptyException;
+import com.alan.filesystemchallenge.exceptions.FileIdEmptyException;
 import com.alan.filesystemchallenge.exceptions.FileNotFoundException;
+import com.alan.filesystemchallenge.exceptions.UserDoesNotHaveAccessToFileException;
 import com.alan.filesystemchallenge.exceptions.UserIsNotTheFileOwnerException;
 import com.alan.filesystemchallenge.exceptions.UserNotAuthenticatedException;
 import com.alan.filesystemchallenge.exceptions.UserNotFoundException;
@@ -11,6 +13,7 @@ import com.alan.filesystemchallenge.models.builders.FileShareBuilder;
 import com.alan.filesystemchallenge.models.entities.FileShare;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
 import com.alan.filesystemchallenge.models.requests.FileShareRequest;
+import com.alan.filesystemchallenge.models.FileDownload;
 import com.alan.filesystemchallenge.models.responses.FileMetadataResponse;
 import com.alan.filesystemchallenge.models.responses.FileResponse;
 import com.alan.filesystemchallenge.repositories.FileShareRepository;
@@ -20,6 +23,9 @@ import com.alan.filesystemchallenge.transformers.FileTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -141,6 +147,32 @@ public class FileService {
 						.setCreatedDate(fileShare.getFile().getCreateDate())
 						.build()
 				).toList();
+	}
+
+	public FileDownload downloadFile(Optional<Long> optionalFileId) {
+		var fileId = optionalFileId.orElseThrow(FileIdEmptyException::new);
+		var userId = this.validateAuthAndGetUserId();
+
+		logger.info("Finding if file exists...");
+		var file = this.filesRepository.findById(fileId).orElseThrow(FileNotFoundException::new);
+
+		logger.info("Checking if user has access to the file...");
+		file.getFileShareInfo()
+				.stream()
+				.filter(fileShare -> fileShare.getUserId().equals(userId))
+				.findAny()
+				.orElseThrow(UserDoesNotHaveAccessToFileException::new);
+
+		// Adding headers to allow downloading of the file
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		headers.setContentDisposition(ContentDisposition.builder("attachment")
+				.filename(file.getName())
+				.build());
+		headers.setContentLength(file.getFileContent().length);
+
+		logger.info("Downloading file {} for user id {}...", fileId, userId);
+		return new FileDownload(file.getFileContent(), headers);
 	}
 
 	// this auth maybe should be on a filter or interceptor and the user should be stored on the MDC (then get it here)

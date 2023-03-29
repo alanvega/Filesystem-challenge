@@ -7,19 +7,21 @@ import com.alan.filesystemchallenge.exceptions.UserDoesNotHaveAccessToFileExcept
 import com.alan.filesystemchallenge.exceptions.UserIsNotTheFileOwnerException;
 import com.alan.filesystemchallenge.exceptions.UserNotAuthenticatedException;
 import com.alan.filesystemchallenge.exceptions.UserNotFoundException;
+import com.alan.filesystemchallenge.models.FileDownload;
 import com.alan.filesystemchallenge.models.builders.FileBuilder;
 import com.alan.filesystemchallenge.models.builders.FileMetadataBuilder;
 import com.alan.filesystemchallenge.models.builders.FileShareBuilder;
+import com.alan.filesystemchallenge.models.entities.File;
 import com.alan.filesystemchallenge.models.entities.FileShare;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
 import com.alan.filesystemchallenge.models.requests.FileShareRequest;
-import com.alan.filesystemchallenge.models.FileDownload;
 import com.alan.filesystemchallenge.models.responses.FileMetadataResponse;
 import com.alan.filesystemchallenge.models.responses.FileResponse;
 import com.alan.filesystemchallenge.repositories.FileShareRepository;
 import com.alan.filesystemchallenge.repositories.FilesRepository;
 import com.alan.filesystemchallenge.repositories.UsersRepository;
 import com.alan.filesystemchallenge.transformers.FileTransformer;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,21 +103,10 @@ public class FileService {
 
 		var userId = this.validateAuthAndGetUserId();
 
-		logger.info("Finding if file exists...");
-		var file = this.filesRepository.findById(fileShareRequest.getFileId()).orElseThrow(FileNotFoundException::new);
+		File file = this.validateAndGetFile(fileShareRequest.getFileId());
 
 		// I'm assuming that only the owner can share the file
-		logger.info("Checking if user is the file owner...");
-		var fileShareInfo = file
-				.getFileShareInfo()
-				.stream()
-				.filter(FileShare::isOwner)
-				.findFirst()
-				.orElseThrow(UserIsNotTheFileOwnerException::new);
-
-		if(!fileShareInfo.getUserId().equals(userId) || !fileShareInfo.isOwner()) {
-			throw new UserIsNotTheFileOwnerException();
-		}
+		this.validateIfUserIsFileOwner(file.getFileShareInfo(), userId);
 
 		logger.info("User is the file owner, finding if user to share exists...");
 		var userToShare = this.usersRepository
@@ -150,11 +141,10 @@ public class FileService {
 	}
 
 	public FileDownload downloadFile(Optional<Long> optionalFileId) {
-		var fileId = optionalFileId.orElseThrow(FileIdEmptyException::new);
+		var fileId = this.validateAndGetFileId(optionalFileId);
 		var userId = this.validateAuthAndGetUserId();
 
-		logger.info("Finding if file exists...");
-		var file = this.filesRepository.findById(fileId).orElseThrow(FileNotFoundException::new);
+		File file = validateAndGetFile(fileId);
 
 		logger.info("Checking if user has access to the file...");
 		file.getFileShareInfo()
@@ -173,6 +163,43 @@ public class FileService {
 
 		logger.info("Downloading file {} for user id {}...", fileId, userId);
 		return new FileDownload(file.getFileContent(), headers);
+	}
+
+	@Transactional
+	public void deleteFile(Optional<Long> optionalFileId) {
+		var fileId = this.validateAndGetFileId(optionalFileId);
+		var userId = this.validateAuthAndGetUserId();
+
+		// I'm assuming that only the owner can delete the file
+		this.validateIfUserIsFileOwner(this.fileShareRepository.findByFileId(fileId), userId);
+
+		logger.info("User is the file owner, first deleting all file shares...");
+		this.fileShareRepository.deleteByFileId(fileId);
+
+		logger.info("Deleted all file shares, now deleting file...");
+		this.filesRepository.deleteById(fileId);
+
+		logger.info("Deleted file.");
+	}
+
+	private void validateIfUserIsFileOwner(List<FileShare> fileShareList, Long userId) {
+		logger.info("Checking if user is the file owner...");
+		fileShareList
+				.stream()
+				.filter(FileShare::isOwner)
+				.filter(fileshare -> fileshare.getUserId().equals(userId))
+				.findFirst()
+				.orElseThrow(UserIsNotTheFileOwnerException::new);
+	}
+
+	private File validateAndGetFile(Long fileId) {
+		logger.info("Finding if file exists...");
+		return this.filesRepository.findById(fileId).orElseThrow(FileNotFoundException::new);
+	}
+
+	private Long validateAndGetFileId(Optional<Long> optionalFileId) {
+		logger.info("Checking if file id is present...");
+		return optionalFileId.orElseThrow(FileIdEmptyException::new);
 	}
 
 	// this auth maybe should be on a filter or interceptor and the user should be stored on the MDC (then get it here)

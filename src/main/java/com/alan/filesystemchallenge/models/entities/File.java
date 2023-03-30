@@ -61,6 +61,10 @@ public class File {
 		}
 	}
 
+	public void setFileContent(byte[] fileContent) {
+		this.fileContent = fileContent;
+	}
+
 	public Date getCreateDate() {
 		return createDate;
 	}

@@ -9,6 +9,7 @@ public class FileBuilder {
 
 	private String name;
 	private MultipartFile fileContent;
+	private byte[] fileContentAsBytes;
 	private Date createDate;
 
 	public static FileBuilder builder() {
@@ -30,11 +31,17 @@ public class FileBuilder {
 		return this;
 	}
 
+	public FileBuilder withFileContent(byte[] fileContent) {
+		this.fileContentAsBytes = fileContent;
+		return this;
+	}
+
 	public File build() {
 		var file = new File();
 		file.setName(this.name);
 		file.setCreateDate(this.createDate);
-		file.setFileContent(fileContent);
+		if(this.fileContent != null) file.setFileContent(this.fileContent);
+		if(this.fileContentAsBytes != null) file.setFileContent(this.fileContentAsBytes);
 		return file;
 	}
 

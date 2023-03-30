@@ -1,7 +1,9 @@
 package com.alan.filesystemchallenge.controllers;
 
+import com.alan.filesystemchallenge.models.requests.FileRenameRequest;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
 import com.alan.filesystemchallenge.models.requests.FileShareRequest;
+import com.alan.filesystemchallenge.models.requests.FileRemoveAccessRequest;
 import com.alan.filesystemchallenge.models.responses.FileMetadataResponse;
 import com.alan.filesystemchallenge.models.responses.FileResponse;
 import com.alan.filesystemchallenge.services.FileService;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/file")
@@ -55,16 +56,30 @@ public class FileController {
 	}
 
 	@GetMapping("/download/{fileId}")
-	public ResponseEntity<byte[]> download(@PathVariable Optional<Long> fileId) {
+	public ResponseEntity<byte[]> download(@PathVariable Long fileId) {
 		logger.info("Download file");
 		var fileDownload = this.fileService.downloadFile(fileId);
 		return new ResponseEntity<>(fileDownload.getFile(), fileDownload.getHeaders(), HttpStatus.OK);
 	}
 
 	@DeleteMapping("/delete/{fileId}")
-	public ResponseEntity<Void> delete(@PathVariable Optional<Long> fileId) {
+	public ResponseEntity<Void> delete(@PathVariable Long fileId) {
 		logger.info("Delete file");
 		this.fileService.deleteFile(fileId);
+		return ResponseEntity.ok().build();
+	}
+
+	@PostMapping("/remove-access")
+	public ResponseEntity<Void> removeAccess(@RequestBody FileRemoveAccessRequest fileRemoveAccessRequest) {
+		logger.info("Remove access to file");
+		this.fileService.removeAccess(fileRemoveAccessRequest);
+		return ResponseEntity.ok().build();
+	}
+
+	@PostMapping("/rename")
+	public ResponseEntity<Void> rename(@RequestBody FileRenameRequest fileRenameRequest) {
+		logger.info("Rename file");
+		this.fileService.renameFile(fileRenameRequest);
 		return ResponseEntity.ok().build();
 	}
 

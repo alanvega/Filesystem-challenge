@@ -1,8 +1,8 @@
 package com.alan.filesystemchallenge.services;
 
 import com.alan.filesystemchallenge.exceptions.FileEmptyException;
-import com.alan.filesystemchallenge.exceptions.FileIdEmptyException;
 import com.alan.filesystemchallenge.exceptions.FileNotFoundException;
+import com.alan.filesystemchallenge.exceptions.UserCannotRemoveOwnAccessException;
 import com.alan.filesystemchallenge.exceptions.UserDoesNotHaveAccessToFileException;
 import com.alan.filesystemchallenge.exceptions.UserIsNotTheFileOwnerException;
 import com.alan.filesystemchallenge.exceptions.UserNotAuthenticatedException;
@@ -13,8 +13,10 @@ import com.alan.filesystemchallenge.models.builders.FileMetadataBuilder;
 import com.alan.filesystemchallenge.models.builders.FileShareBuilder;
 import com.alan.filesystemchallenge.models.entities.File;
 import com.alan.filesystemchallenge.models.entities.FileShare;
+import com.alan.filesystemchallenge.models.requests.FileRenameRequest;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
 import com.alan.filesystemchallenge.models.requests.FileShareRequest;
+import com.alan.filesystemchallenge.models.requests.FileRemoveAccessRequest;
 import com.alan.filesystemchallenge.models.responses.FileMetadataResponse;
 import com.alan.filesystemchallenge.models.responses.FileResponse;
 import com.alan.filesystemchallenge.repositories.FileShareRepository;
@@ -140,11 +142,10 @@ public class FileService {
 				).toList();
 	}
 
-	public FileDownload downloadFile(Optional<Long> optionalFileId) {
-		var fileId = this.validateAndGetFileId(optionalFileId);
+	public FileDownload downloadFile(Long fileId) {
 		var userId = this.validateAuthAndGetUserId();
 
-		File file = validateAndGetFile(fileId);
+		var file = validateAndGetFile(fileId);
 
 		logger.info("Checking if user has access to the file...");
 		file.getFileShareInfo()
@@ -166,8 +167,7 @@ public class FileService {
 	}
 
 	@Transactional
-	public void deleteFile(Optional<Long> optionalFileId) {
-		var fileId = this.validateAndGetFileId(optionalFileId);
+	public void deleteFile(Long fileId) {
 		var userId = this.validateAuthAndGetUserId();
 
 		// I'm assuming that only the owner can delete the file
@@ -180,6 +180,56 @@ public class FileService {
 		this.filesRepository.deleteById(fileId);
 
 		logger.info("Deleted file.");
+	}
+
+	public void removeAccess(FileRemoveAccessRequest fileRemoveAccessRequest) {
+		var userId = this.validateAuthAndGetUserId();
+
+		logger.info("Finding if shared user exists...");
+		var sharedUser = this.usersRepository.findByUsername(fileRemoveAccessRequest.getUsername())
+				.orElseThrow(UserNotFoundException::new);
+
+		if(sharedUser.getId().equals(userId)) throw new UserCannotRemoveOwnAccessException();
+
+		logger.info("Shared user exists, finding if there is a shared access to given file...");
+		var fileShares = this.fileShareRepository.findByFileId(fileRemoveAccessRequest.getFileId());
+		if(fileShares.isEmpty()) throw new FileNotFoundException();
+
+		// I am assuming that only the owner can remove access to the file
+		logger.info("There is a shared access to given file, checking if user is the file owner...");
+		this.validateIfUserIsFileOwner(fileShares, userId);
+
+		logger.info("User is the file owner, revoking file access...");
+		var fileShareId = this.fileShareRepository.findByFileId(fileRemoveAccessRequest.getFileId())
+				.stream()
+				.filter(fileShare -> fileShare.getUserId().equals(sharedUser.getId()))
+				.findFirst()
+				.orElseThrow(UserDoesNotHaveAccessToFileException::new)
+				.getId();
+
+		this.fileShareRepository.deleteById(fileShareId);
+		logger.info("Revoked file access with file id {} for username {}.",
+				fileRemoveAccessRequest.getFileId(),
+				fileRemoveAccessRequest.getUsername());
+	}
+
+	public void renameFile(FileRenameRequest fileRenameRequest) {
+		var userId = this.validateAuthAndGetUserId();
+
+		logger.info("Finding if file exists...");
+		var file = this.filesRepository.findById(fileRenameRequest.getFileId())
+				.orElseThrow(FileNotFoundException::new);
+
+		// I'm assuming that only the owner can rename the file
+		this.validateIfUserIsFileOwner(file.getFileShareInfo(), userId);
+
+		logger.info("User is the file owner, renaming file...");
+		filesRepository.updateName(fileRenameRequest.getNewName(), fileRenameRequest.getFileId());
+
+		logger.info("File with id {}, and name {} renamed to {}.",
+				fileRenameRequest.getFileId(),
+				file.getName(),
+				fileRenameRequest.getNewName());
 	}
 
 	private void validateIfUserIsFileOwner(List<FileShare> fileShareList, Long userId) {
@@ -195,11 +245,6 @@ public class FileService {
 	private File validateAndGetFile(Long fileId) {
 		logger.info("Finding if file exists...");
 		return this.filesRepository.findById(fileId).orElseThrow(FileNotFoundException::new);
-	}
-
-	private Long validateAndGetFileId(Optional<Long> optionalFileId) {
-		logger.info("Checking if file id is present...");
-		return optionalFileId.orElseThrow(FileIdEmptyException::new);
 	}
 
 	// this auth maybe should be on a filter or interceptor and the user should be stored on the MDC (then get it here)

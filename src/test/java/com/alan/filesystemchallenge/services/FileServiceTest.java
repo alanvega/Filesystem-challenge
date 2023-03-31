@@ -13,6 +13,7 @@ import com.alan.filesystemchallenge.models.builders.UserBuilder;
 import com.alan.filesystemchallenge.models.entities.File;
 import com.alan.filesystemchallenge.models.entities.FileShare;
 import com.alan.filesystemchallenge.models.requests.FileRemoveAccessRequest;
+import com.alan.filesystemchallenge.models.requests.FileRenameRequest;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
 import com.alan.filesystemchallenge.models.requests.FileShareRequest;
 import com.alan.filesystemchallenge.repositories.FileShareRepository;
@@ -421,7 +422,18 @@ class FileServiceTest {
 
 	@Test
 	void renameFile() {
-		//TODO: Missing implementation
+		var fileNewName = "newName.txt";
+		var fileRenameRequest = new FileRenameRequest();
+		fileRenameRequest.setNewName(fileNewName);
+		fileRenameRequest.setFileId(FILE_ID);
+
+		var result = getResult(USER_ID, FILE_ID, true);
+
+		when(filesRepository.findById(FILE_ID)).thenReturn(Optional.of(result.file()));
+
+		fileService.renameFile(fileRenameRequest);
+
+		verify(filesRepository, times(1)).updateName(fileNewName, FILE_ID);
 	}
 
 	private void authenticateUser() {

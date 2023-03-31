@@ -95,7 +95,7 @@ public class FileService {
 				userId
 		);
 
-		return this.fileTransformer.transformFileResponse(file);
+		return this.fileTransformer.transformFileResponse(savedFile);
 	}
 
 	public void shareFile(FileShareRequest fileShareRequest) {
@@ -105,7 +105,7 @@ public class FileService {
 
 		var userId = this.validateAuthAndGetUserId();
 
-		File file = this.validateAndGetFile(fileShareRequest.getFileId());
+		var file = this.validateAndGetFile(fileShareRequest.getFileId());
 
 		// I'm assuming that only the owner can share the file
 		this.validateIfUserIsFileOwner(file.getFileShareInfo(), userId);
@@ -154,22 +154,17 @@ public class FileService {
 				.findAny()
 				.orElseThrow(UserDoesNotHaveAccessToFileException::new);
 
-		// Adding headers to allow downloading of the file
-		var headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-		headers.setContentDisposition(ContentDisposition.builder("attachment")
-				.filename(file.getName())
-				.build());
-		headers.setContentLength(file.getFileContent().length);
-
 		logger.info("Downloading file {} for user id {}...", fileId, userId);
-		return new FileDownload(file.getFileContent(), headers);
+		return new FileDownload(file.getFileContent(), getHttpHeaders(file));
 	}
 
 	@Transactional
 	public void deleteFile(Long fileId) {
 		var userId = this.validateAuthAndGetUserId();
 
+		this.validateAndGetFile(fileId);
+
+		logger.info("File exists, checking if user is the file owner...");
 		// I'm assuming that only the owner can delete the file
 		this.validateIfUserIsFileOwner(this.fileShareRepository.findByFileId(fileId), userId);
 
@@ -200,7 +195,7 @@ public class FileService {
 		this.validateIfUserIsFileOwner(fileShares, userId);
 
 		logger.info("User is the file owner, revoking file access...");
-		var fileShareId = this.fileShareRepository.findByFileId(fileRemoveAccessRequest.getFileId())
+		var fileShareId = fileShares
 				.stream()
 				.filter(fileShare -> fileShare.getUserId().equals(sharedUser.getId()))
 				.findFirst()
@@ -216,9 +211,7 @@ public class FileService {
 	public void renameFile(FileRenameRequest fileRenameRequest) {
 		var userId = this.validateAuthAndGetUserId();
 
-		logger.info("Finding if file exists...");
-		var file = this.filesRepository.findById(fileRenameRequest.getFileId())
-				.orElseThrow(FileNotFoundException::new);
+		var file = this.validateAndGetFile(fileRenameRequest.getFileId());
 
 		// I'm assuming that only the owner can rename the file
 		this.validateIfUserIsFileOwner(file.getFileShareInfo(), userId);
@@ -230,6 +223,17 @@ public class FileService {
 				fileRenameRequest.getFileId(),
 				file.getName(),
 				fileRenameRequest.getNewName());
+	}
+
+	// Headers to allow downloading the file
+	private HttpHeaders getHttpHeaders(File file) {
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		headers.setContentDisposition(ContentDisposition.builder("attachment")
+				.filename(file.getName())
+				.build());
+		headers.setContentLength(file.getFileContent().length);
+		return headers;
 	}
 
 	private void validateIfUserIsFileOwner(List<FileShare> fileShareList, Long userId) {

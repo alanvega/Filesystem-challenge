@@ -14,10 +14,12 @@
 		<maven.compiler.source>20</maven.compiler.source>
 		<maven.compiler.target>20</maven.compiler.target>
 		<spring-boot-starter.version>3.0.5</spring-boot-starter.version>
-<!--		<spring-web.version>6.0.7</spring-web.version>-->
 		<spring-security.version>6.0.2</spring-security.version>
 		<logback-classic.version>1.4.6</logback-classic.version>
 		<mysql-connector-java.version>8.0.32</mysql-connector-java.version>
+		<junit-jupiter.version>5.9.2</junit-jupiter.version>
+		<spring-test.version>6.0.7</spring-test.version>
+		<mockito-testng.version>0.4.30</mockito-testng.version>
 	</properties>
 
 	<dependencies>
@@ -79,6 +81,26 @@
 			<artifactId>mysql-connector-java</artifactId>
 			<scope>runtime</scope>
 			<version>${mysql-connector-java.version}</version>
+		</dependency>
+
+		<!-- Test -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${spring-test.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${junit-jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-testng</artifactId>
+			<version>${mockito-testng.version}</version>
 		</dependency>
 	</dependencies>
 

@@ -37,8 +37,8 @@ public class UserService {
 
 		logger.info("Creating user with username {}...", userRequest.getUsername());
 		var user = UserBuilder.builder()
-				.setUsername(userRequest.getUsername())
-				.setPassword(this.passwordEncoder.encode(userRequest.getPassword()))
+				.withUsername(userRequest.getUsername())
+				.withPassword(this.passwordEncoder.encode(userRequest.getPassword()))
 				.build();
 
 

@@ -170,7 +170,7 @@ class FileServiceTest {
 				.withUsername(username2)
 				.build();
 
-		var result = getResult(USER_ID, FILE_ID, true);
+		var result = getResult(USER_ID, true);
 
 		when(usersRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
 		when(usersRepository.findByUsername(username2)).thenReturn(Optional.of(user2));
@@ -192,7 +192,7 @@ class FileServiceTest {
 
 		when(filesRepository.findById(FILE_ID)).thenReturn(Optional.empty());
 
-		assertThrows(FileNotFoundException.class, () -> fileService.shareFile(fileShareRequest));;
+		assertThrows(FileNotFoundException.class, () -> fileService.shareFile(fileShareRequest));
 
 		// verify
 		verify(filesRepository, times(1)).findById(FILE_ID);
@@ -267,7 +267,7 @@ class FileServiceTest {
 
 	@Test
 	void getAllFiles() {
-		var result = getResult(USER_ID, FILE_ID, false);
+		var result = getResult(USER_ID, false);
 
 		var fileShares = List.of(result.fileShare());
 
@@ -295,7 +295,7 @@ class FileServiceTest {
 
 	@Test
 	void downloadFile() {
-		var result = getResult(USER_ID, FILE_ID, true);
+		var result = getResult(USER_ID, true);
 
 		when(filesRepository.findById(FILE_ID)).thenReturn(Optional.of(result.file()));
 
@@ -320,7 +320,7 @@ class FileServiceTest {
 
 	@Test
 	void downloadFileShouldThrowsUserDoesNotHaveAccessToFileException() {
-		var result = getResult(2L, FILE_ID, true);
+		var result = getResult(2L, true);
 
 		when(filesRepository.findById(FILE_ID)).thenReturn(Optional.of(result.file()));
 
@@ -332,7 +332,7 @@ class FileServiceTest {
 
 	@Test
 	void deleteFile() {
-		var result = getResult(USER_ID, FILE_ID, true);
+		var result = getResult(USER_ID, true);
 
 		var fileShares = List.of(result.fileShare());
 		when(filesRepository.findById(FILE_ID)).thenReturn(Optional.of(result.file()));
@@ -354,7 +354,7 @@ class FileServiceTest {
 		fileRemoveAccessRequest.setFileId(FILE_ID);
 		fileRemoveAccessRequest.setUsername(username2);
 
-		var result = getResult(USER_ID, FILE_ID, true);
+		var result = getResult(USER_ID, true);
 
 		var fileShareForUser2 = FileShareBuilder.builder()
 				.withFileId(FILE_ID)
@@ -385,7 +385,7 @@ class FileServiceTest {
 		fileRemoveAccessRequest.setFileId(FILE_ID);
 		fileRemoveAccessRequest.setUsername(USERNAME);
 
-		var result = getResult(USER_ID, FILE_ID, true);
+		var result = getResult(USER_ID, true);
 		var fileShares = List.of(result.fileShare());
 
 		var user = UserBuilder.builder()
@@ -409,7 +409,7 @@ class FileServiceTest {
 		fileRemoveAccessRequest.setFileId(FILE_ID);
 		fileRemoveAccessRequest.setUsername(username);
 
-		var result = getResult(USER_ID, FILE_ID, true);
+		var result = getResult(USER_ID, true);
 		var fileShares = List.of(result.fileShare());
 
 		when(fileShareRepository.findByFileId(FILE_ID)).thenReturn(fileShares);
@@ -428,7 +428,7 @@ class FileServiceTest {
 		fileRenameRequest.setNewName(fileNewName);
 		fileRenameRequest.setFileId(FILE_ID);
 
-		var result = getResult(USER_ID, FILE_ID, true);
+		var result = getResult(USER_ID, true);
 
 		when(filesRepository.findById(FILE_ID)).thenReturn(Optional.of(result.file()));
 
@@ -463,18 +463,18 @@ class FileServiceTest {
 		when(usersRepository.findByUsername(any())).thenReturn(Optional.of(user));
 	}
 
-	private static Result getResult(Long userId, Long fileId, Boolean fileWithShareList) {
+	private static Result getResult(Long userId, Boolean fileWithShareList) {
 		var date = new Date();
 		var fileName = "test.txt";
 		var fileShareBuilder = FileShareBuilder.builder()
 				.withUserId(userId)
 				.withIsOwner(true)
-				.withFileId(fileId);
+				.withFileId(FILE_ID);
 
 		var fileBuilder = FileBuilder.builder()
 				.withName(fileName)
 				.withCreateDate(date)
-				.withFileId(fileId)
+				.withFileId(FILE_ID)
 				.withFileContent("test".getBytes());
 
 		if(fileWithShareList) {

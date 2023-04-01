@@ -17,8 +17,8 @@ import java.util.List;
 @Entity(name = "files")
 public class File {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Column(name = "id", nullable = false)
+	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	private Long id;
 
 	private String name;

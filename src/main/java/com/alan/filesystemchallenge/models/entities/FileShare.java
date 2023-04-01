@@ -11,8 +11,8 @@ import jakarta.persistence.ManyToOne;
 @Entity(name = "file_share")
 public class FileShare {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Column(name = "id", nullable = false)
+	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	private Long id;
 
 	@Column(name = "user_id")

@@ -55,7 +55,7 @@ class FileServiceTest {
 
 	private static final long USER_ID = 1L;
 	private static final long FILE_ID = 2L;
-	private static final String USERNAME = "pepe";
+	private static final String USERNAME = "username";
 
 	@BeforeEach
 	void setUp() {

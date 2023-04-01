@@ -26,7 +26,6 @@ class UserServiceTest {
 	private UsersRepository usersRepository;
 	private PasswordEncoder passwordEncoder;
 
-
 	private static final String USERNAME = "username";
 	private static final String PASSWORD = "password";
 	private static final String ENCODED_PASSWORD = "{bcrypt}p#s$w0rdEnc0ded";

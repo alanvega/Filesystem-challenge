@@ -29,7 +29,8 @@ public class WebSecurityConfig {
 										.requestMatchers("/error").permitAll()
 										.requestMatchers(HttpMethod.POST, "/user/create").permitAll()
 										.anyRequest().authenticated()
-										.and().csrf().disable(); // TODO: this should be removed
+										// on a real project this should be enabled (and used csrf token to prevent csrf attacks)
+										.and().csrf().disable();
 							} catch (Exception e) {
 								throw new RuntimeException(e);
 							}
@@ -38,7 +39,7 @@ public class WebSecurityConfig {
 				.formLogin(form -> form
 						.loginPage("/login.html")
 						.loginProcessingUrl("/login")
-		                .defaultSuccessUrl("/home", true)
+		                .defaultSuccessUrl("/home", false)
 						.failureUrl("/error")
 						.permitAll()
 				)
@@ -49,12 +50,11 @@ public class WebSecurityConfig {
 
 	@Bean
 	public AuthenticationManager authenticationManager(UserDetailsService customUserDetailsService) {
-
-		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+		var authProvider = new DaoAuthenticationProvider();
 		authProvider.setUserDetailsService(customUserDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder());
 
-		List<AuthenticationProvider> providers = List.of(authProvider);
+		var providers = List.<AuthenticationProvider>of(authProvider);
 
 		return new ProviderManager(providers);
 	}

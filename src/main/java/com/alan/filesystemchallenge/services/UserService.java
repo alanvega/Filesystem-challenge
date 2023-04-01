@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 public class UserService {
@@ -26,7 +27,7 @@ public class UserService {
 
 	public void create(UserRequest userRequest) {
 		// this validations should be moved to a validation service
-		if(userRequest.getUsername().isEmpty() || userRequest.getPassword().isEmpty()) {
+		if(!StringUtils.hasText(userRequest.getUsername()) || !StringUtils.hasText(userRequest.getPassword())) {
 			throw new UserEmptyException();
 		}
 

@@ -1,6 +1,7 @@
 package com.alan.filesystemchallenge.services;
 
 import com.alan.filesystemchallenge.exceptions.FileEmptyException;
+import com.alan.filesystemchallenge.exceptions.FileNameEmptyException;
 import com.alan.filesystemchallenge.exceptions.FileNotFoundException;
 import com.alan.filesystemchallenge.exceptions.UserCannotRemoveOwnAccessException;
 import com.alan.filesystemchallenge.exceptions.UserDoesNotHaveAccessToFileException;
@@ -434,6 +435,16 @@ class FileServiceTest {
 		fileService.renameFile(fileRenameRequest);
 
 		verify(filesRepository, times(1)).updateName(fileNewName, FILE_ID);
+	}
+
+	@Test
+	void renameFileWithEmptyNewName() {
+		var fileRenameRequest = new FileRenameRequest();
+		fileRenameRequest.setFileId(FILE_ID);
+
+		assertThrows(FileNameEmptyException.class, () -> fileService.renameFile(fileRenameRequest));
+
+		verify(filesRepository, times(0)).updateName(any(), any());
 	}
 
 	private void authenticateUser() {

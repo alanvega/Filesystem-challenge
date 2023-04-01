@@ -1,6 +1,7 @@
 package com.alan.filesystemchallenge.services;
 
 import com.alan.filesystemchallenge.exceptions.FileEmptyException;
+import com.alan.filesystemchallenge.exceptions.FileNameEmptyException;
 import com.alan.filesystemchallenge.exceptions.FileNotFoundException;
 import com.alan.filesystemchallenge.exceptions.UserCannotRemoveOwnAccessException;
 import com.alan.filesystemchallenge.exceptions.UserDoesNotHaveAccessToFileException;
@@ -13,10 +14,10 @@ import com.alan.filesystemchallenge.models.builders.FileMetadataBuilder;
 import com.alan.filesystemchallenge.models.builders.FileShareBuilder;
 import com.alan.filesystemchallenge.models.entities.File;
 import com.alan.filesystemchallenge.models.entities.FileShare;
+import com.alan.filesystemchallenge.models.requests.FileRemoveAccessRequest;
 import com.alan.filesystemchallenge.models.requests.FileRenameRequest;
 import com.alan.filesystemchallenge.models.requests.FileRequest;
 import com.alan.filesystemchallenge.models.requests.FileShareRequest;
-import com.alan.filesystemchallenge.models.requests.FileRemoveAccessRequest;
 import com.alan.filesystemchallenge.models.responses.FileMetadataResponse;
 import com.alan.filesystemchallenge.models.responses.FileResponse;
 import com.alan.filesystemchallenge.repositories.FileShareRepository;
@@ -32,6 +33,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -209,6 +211,8 @@ public class FileService {
 	}
 
 	public void renameFile(FileRenameRequest fileRenameRequest) {
+		if(!StringUtils.hasText(fileRenameRequest.getNewName())) throw new FileNameEmptyException();
+
 		var userId = this.validateAuthAndGetUserId();
 
 		var file = this.validateAndGetFile(fileRenameRequest.getFileId());

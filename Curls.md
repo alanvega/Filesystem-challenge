@@ -71,7 +71,6 @@ _You should change the JSESSIONID cookie with the one that was returned on the l
 ```bash
 curl -v --request GET \
 --url http://localhost:8080/file/get-all \
---header 'Authorization: Basic Og==' \
 --cookie JSESSIONID=8F371B69FC098E25440F67BF6BFFCEC4
 ```
 This would return a json like this:

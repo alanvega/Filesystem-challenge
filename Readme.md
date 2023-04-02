@@ -12,13 +12,16 @@ I assumed:
 There are some things that I would improve for a real application:
 - Create a user for the mysql (at least one for dev and one for the app)
 - Session should be persisted on the database, so it doesn't get lost when the server restarts (now it is only stored on memory).
-- The authentication validation should be on an interceptor, also it should save the userId on the MDC to be able to have it on the whole app.
+- The authentication could be custom instead of using the spring default.
+- The authentication validation (method validateAuthAndGetUserId on FileService) should be on an interceptor, also it should save the userId on the MDC to be able to have it on the whole app.
+- Some validations could be moved to another service instead of being on FileService.
 - Some lock on the file or user table when a new permission is created or a file is being deleted (for that file or user only).
 - Maybe files should be stored on an S3 instead of a mysql
 
 Some improves on security:
 - Use CSRF tokens
 - The session cookie should have expiration time
+- Some logs should be hidden on a real app (for example the one that show the username and userId)
 
 ## Run the project
 You can run the project with Docker, just by running the following shell script (if you don't have Docker it will install it):

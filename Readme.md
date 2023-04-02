@@ -22,6 +22,7 @@ Some improves on security:
 
 ## Run the project
 You can run the project with Docker, just by running the following shell script (if you don't have Docker it will install it):
+It should start on port 8080
 ```bash
 ./startup.sh
 ```
@@ -35,7 +36,8 @@ To stop it just run the shutdown script:
 ## Run the project without Docker
 You can also manually run the java app just by starting your own mysql server on port `3306` with the configuration on the `application.properties` file,
 then run the [script.sql](./script.sql) inside the mysql to create the needed tables,
-run `mvn clean install` and for last run `mvn spring-boot:run` to start the application
+run `mvn clean install` and for last run `mvn spring-boot:run` to start the application.
+The application should start on port 8080.
 
 _Note that this requires having jdk-17, and maven installed._
 
